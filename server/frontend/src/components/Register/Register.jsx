@@ -91,7 +91,7 @@ const Register = () => {
 
         </div>
         <div className="submit_panel">
-          <input className="submit" type="submit" value="Register" onClick={()=>setOpen(false)}/>
+          <input className="submit" type="submit" value="Register"/>
         </div>
       </form>
       </div>
