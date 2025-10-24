@@ -159,16 +159,44 @@ def get_dealer_details(request, dealer_id):
         return JsonResponse({"status":400,"message":"Bad Request"})
 
 # Create a `add_review` view to submit a review
+@csrf_exempt
 def add_review(request):
-    if(request.user.is_anonymous == False):
+    if request.user.is_anonymous:
+        return JsonResponse({"status": 403, "message": "Unauthorized"})
+
+    if request.method != "POST":
+        return JsonResponse({"status": 405, "message": "Method Not Allowed"})
+
+    try:
         data = json.loads(request.body)
-        try:
-            response = post_review(data)
-            return JsonResponse({"status":200})
-        except:
-            return JsonResponse({"status":401,"message":"Error in posting review"})
-    else:
-        return JsonResponse({"status":403,"message":"Unauthorized"})
+        print("Received review data:", data)
+    except json.JSONDecodeError:
+        return JsonResponse({"status": 400, "message": "Invalid JSON"})
+
+    try:
+        response = post_review(data)
+        print("Backend /insert_review response:", response)
+
+        # Handle missing or invalid backend responses
+        if response is None:
+            return JsonResponse({"status": 500, "message": "No response from backend"})
+
+        # Accept both numeric and string success indicators
+        if isinstance(response, dict) and response.get("status") in ["success", "ok", 200, 201]:
+            return JsonResponse({"status": 200, "message": "Review posted successfully", "backend_response": response})
+
+        return JsonResponse({
+            "status": 400,
+            "message": "Backend failed to post review",
+            "backend_response": response
+        })
+
+    except Exception as e:
+        print("Error posting review:", str(e))
+        return JsonResponse({
+            "status": 500,
+            "message": f"Error posting review: {str(e)}"
+        })
 
 def get_cars(request):
     count = CarMake.objects.filter().count()

@@ -43,10 +43,30 @@ def analyze_review_sentiments(text):
 
 # Add code for posting review
 def post_review(data_dict):
-    request_url = backend_url+"/insert_review"
+    """
+    Posts a review to the backend endpoint /insert_review
+    and returns the response JSON (or None on failure).
+    """
+    request_url = backend_url + "/insert_review"
+
     try:
-        response = requests.post(request_url,json=data_dict)
-        print(response.json())
-        return response.json()
-    except:
-        print("Network exception occurred")
+        response = requests.post(request_url, json=data_dict, timeout=10)
+
+        # Log status
+        logger.info(f"Backend /insert_review response: {response.status_code}")
+
+        # Try to parse the response
+        try:
+            response_json = response.json()
+        except ValueError:
+            logger.error("Backend did not return valid JSON.")
+            return None
+
+        # Check if backend confirmed success
+        if response.status_code in [200, 201]:
+            return response_json
+        else:
+            return None
+
+    except requests.exceptions.RequestException as e:
+        return None
