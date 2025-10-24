@@ -52,9 +52,6 @@ def post_review(data_dict):
     try:
         response = requests.post(request_url, json=data_dict, timeout=10)
 
-        # Log status
-        logger.info(f"Backend /insert_review response: {response.status_code}")
-
         # Try to parse the response
         try:
             response_json = response.json()
