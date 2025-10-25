@@ -36,42 +36,24 @@ jobs:
         find . -name "*.py" -exec flake8 {} +
         echo "Linted all the python files successfully"
 
-  # -----------------------------
-  # JavaScript Linter (JSHint)
-  # -----------------------------
   lint_js:
-    name: Lint JavaScript Files
-    runs-on: ubuntu-latest
+      name: Lint JavaScript Files
+      runs-on: ubuntu-latest
 
-    steps:
+      steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18   # newer version supports ES8 well
+          node-version: 14
 
       - name: Install JSHint
-        run: npm install -g jshint
-
-      - name: Create .jshintrc config
-        run: |
-          cat <<EOF > .jshintrc
-          {
-            "esversion": 8,
-            "node": true,
-            "browser": false,
-            "globals": {
-              "require": true,
-              "module": true,
-              "process": true
-            }
-          }
-          EOF
+        run: npm install jshint --global
 
       - name: Run Linter
         run: |
-          # Lint all JavaScript files in the project
+          # This command finds all JavaScript files recursively and runs JSHint on them
           find ./server/database -name "*.js" -exec jshint {} +
-          echo "✅ Linted all JavaScript files successfully"
+          echo "Linted all the js files successfully"
