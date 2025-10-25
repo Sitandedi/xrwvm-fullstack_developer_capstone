@@ -1,12 +1,7 @@
-# Uncomment the required imports before adding the code
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from django.contrib.auth.models import User
 from django.contrib.auth import logout, login, authenticate
-from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
-from datetime import datetime
+from django.http import JsonResponse
 import logging
 import json
 
@@ -17,8 +12,6 @@ from .restapis import get_request, analyze_review_sentiments, post_review
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
 
-# Create your views here.
-
 
 @csrf_exempt
 def login_user(request):
@@ -28,28 +21,25 @@ def login_user(request):
     password = data['password']
 
     user = authenticate(username=username, password=password)
-    data = {"userName": username}
+    result = {"userName": username}
 
     if user is not None:
         login(request, user)
-        data = {"userName": username, "status": "Authenticated"}
+        result = {"userName": username, "status": "Authenticated"}
 
-    return JsonResponse(data)
+    return JsonResponse(result)
 
 
 def logout_request(request):
     """Handle user logout requests."""
-    logout(request)  # Terminate user session
-    data = {"userName": ""}  # Return empty username
-    return JsonResponse(data)
+    logout(request)
+    return JsonResponse({"userName": ""})
 
 
 @csrf_exempt
 def registration(request):
     """Handle user registration requests."""
-    context = {}
     data = json.loads(request.body)
-
     username = data['userName']
     password = data['password']
     first_name = data['firstName']
@@ -57,7 +47,6 @@ def registration(request):
     email = data['email']
 
     username_exist = False
-
     try:
         User.objects.get(username=username)
         username_exist = True
@@ -73,20 +62,14 @@ def registration(request):
             email=email
         )
         login(request, user)
-        data = {"userName": username, "status": "Authenticated"}
-        return JsonResponse(data)
+        return JsonResponse({"userName": username, "status": "Authenticated"})
 
-    data = {"userName": username, "error": "Already Registered"}
-    return JsonResponse(data)
+    return JsonResponse({"userName": username, "error": "Already Registered"})
 
 
 def get_dealerships(request, state="All"):
     """Return list of dealerships (all or by state)."""
-    if state == "All":
-        endpoint = "/fetchDealers"
-    else:
-        endpoint = f"/fetchDealers/{state}"
-
+    endpoint = "/fetchDealers" if state == "All" else f"/fetchDealers/{state}"
     dealerships = get_request(endpoint)
     return JsonResponse({"status": 200, "dealers": dealerships})
 
@@ -102,10 +85,9 @@ def get_dealer_reviews(request, dealer_id):
     for review_detail in reviews:
         try:
             response = analyze_review_sentiments(review_detail['review'])
-            if response and 'sentiment' in response:
-                review_detail['sentiment'] = response['sentiment']
-            else:
-                review_detail['sentiment'] = 'unknown'
+            review_detail['sentiment'] = (
+                response.get('sentiment') if response and 'sentiment' in response else 'unknown'
+            )
         except Exception:
             review_detail['sentiment'] = 'error'
 
@@ -133,14 +115,11 @@ def add_review(request):
 
     try:
         data = json.loads(request.body)
-        print("Received review data:", data)
     except json.JSONDecodeError:
         return JsonResponse({"status": 400, "message": "Invalid JSON"})
 
     try:
         response = post_review(data)
-        print("Backend /insert_review response:", response)
-
         if response is None:
             return JsonResponse({"status": 500, "message": "No response from backend"})
 
@@ -158,7 +137,6 @@ def add_review(request):
         })
 
     except Exception as e:
-        print("Error posting review:", str(e))
         return JsonResponse({
             "status": 500,
             "message": f"Error posting review: {str(e)}"
@@ -167,9 +145,7 @@ def add_review(request):
 
 def get_cars(request):
     """Return all cars, populating if empty."""
-    count = CarMake.objects.count()
-    print(count)
-    if count == 0:
+    if CarMake.objects.count() == 0:
         initiate()
 
     car_models = CarModel.objects.select_related('car_make')
