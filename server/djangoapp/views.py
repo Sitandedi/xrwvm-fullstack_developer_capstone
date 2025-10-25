@@ -85,13 +85,17 @@ def get_dealer_reviews(request, dealer_id):
     for review_detail in reviews:
         try:
             response = analyze_review_sentiments(review_detail['review'])
-            review_detail['sentiment'] = (
-                response.get('sentiment') if response and 'sentiment' in response else 'unknown'
-            )
+            if response and 'sentiment' in response:
+                review_detail['sentiment'] = response['sentiment']
+            else:
+                review_detail['sentiment'] = 'unknown'
         except Exception:
             review_detail['sentiment'] = 'error'
 
-    return JsonResponse({"status": 200, "reviews": reviews})
+    return JsonResponse({
+        "status": 200,
+        "reviews": reviews
+    })
 
 
 def get_dealer_details(request, dealer_id):
@@ -121,9 +125,14 @@ def add_review(request):
     try:
         response = post_review(data)
         if response is None:
-            return JsonResponse({"status": 500, "message": "No response from backend"})
+            return JsonResponse({
+                "status": 500, 
+                "message": "No response from backend"
+            })
 
-        if isinstance(response, dict) and response.get("status") in ["success", "ok", 200, 201]:
+        if isinstance(response, dict) and response.get("status") in [
+            "success", "ok", 200, 201
+        ]:
             return JsonResponse({
                 "status": 200,
                 "message": "Review posted successfully",
