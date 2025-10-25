@@ -126,7 +126,7 @@ def add_review(request):
         response = post_review(data)
         if response is None:
             return JsonResponse({
-                "status": 500, 
+                "status": 500,
                 "message": "No response from backend"
             })
 
